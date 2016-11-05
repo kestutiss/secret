@@ -14,3 +14,11 @@
 $app->get('/', function () use ($app) {
     return $app->version();
 });
+
+$app->group(['prefix' => 'api/v1', 'namespace' => 'App\Http\Controllers'], function ($app) {
+    $app->get('secret', 'SecretController@index');
+    $app->get('secret/{id}', 'SecretController@get');
+    $app->post('secret', 'SecretController@create');
+    $app->put('secret/{id}', 'SecretController@update');
+    $app->delete('secret/{id}', 'SecretController@delete');
+});
