@@ -3,12 +3,29 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Model\Secret;
+use App\Transformers\SecretTransformer;
+use League\Fractal\Manager;
+use League\Fractal\Resource\Collection;
 
 class SecretController extends Controller
 {
-    public function index(Request $request)
+    protected static $secretValidationRules = [
+        'name'          => 'required|string|unique:secrets.name',
+        'latitude'      => 'required|numeric',
+        'longitude'     => 'required|numeric',
+        'location_name' => 'required|string'
+    ];
+
+    public function index(Manager $fractal, SecretTransformer $secretTransformer, Request $request)
     {
-        return response()->json(['method' => 'index']);
+        $records = Secret::all();
+
+        $collection = new Collection($records, $secretTransformer);
+
+        $data = $fractal->createData($collection)->toArray();
+
+        return response()->json($data);
     }
 
     public function get($id)
@@ -18,6 +35,22 @@ class SecretController extends Controller
 
     public function create(Request $request)
     {
+        $this->validate(
+            $request,
+            [
+                'name'          => 'required|string|unique:secrets,name',
+                'latitude'      => 'required|numeric',
+                'longitude'     => 'required|numeric',
+                'location_name' => 'required|string'
+            ]
+        );
+
+        $secret = Secret::create($request->all());
+
+        if ($secret->save() === false) {
+            // Manage error
+        }
+
         return response()->json(['method' => 'create']);
     }
 
