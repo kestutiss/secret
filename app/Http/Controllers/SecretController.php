@@ -7,9 +7,13 @@ use App\Model\Secret;
 use App\Transformers\SecretTransformer;
 use League\Fractal\Manager;
 use League\Fractal\Resource\Collection;
+use Datadogstatsd;
 
 class SecretController extends Controller
 {
+    const APM_API_KEY = 'api-key-from-your-acccount';
+    const APM_APP_KEY = 'app-key-from-your-account';
+
     protected static $secretValidationRules = [
         'name'          => 'required|string|unique:secrets.name',
         'latitude'      => 'required|numeric',
@@ -19,11 +23,16 @@ class SecretController extends Controller
 
     public function index(Manager $fractal, SecretTransformer $secretTransformer, Request $request)
     {
+        Datadogstatsd::configure(self::APM_API_KEY, self::APM_APP_KEY);
+        $startTime = microtime(true);
+
         $records = Secret::all();
 
         $collection = new Collection($records, $secretTransformer);
 
         $data = $fractal->createData($collection)->toArray();
+
+        Datadogstatsd::timing('secrets.loading.time', microtime(true) - $startTime);
 
         return response()->json($data);
     }
